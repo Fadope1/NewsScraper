@@ -62,7 +62,7 @@ class Website(ABC):
             results.extend(self.__recursive_find_all(result, search, search_keys, n+1))
         return results
 
-    def recursive_find_all(self, soup, search: dict[str, dict]) -> list:
+    def list_find_all(self, soup, search: dict[str, dict]) -> list:
         """Recursivly find all items by content and attrs."""
         search_keys = list(search) # ['ul', 'li', 'a']
 
@@ -119,13 +119,9 @@ class SeleniumScraper(_NewsScraper):
         # self.__scroll_to_bottom() if scroll_to_bottom else None
         print("Decision point", scroll_to_bottom, type(scroll_to_bottom))
         if isinstance(scroll_to_bottom, Function):
-            print("nice")
             scroll_to_bottom(self.driver, WebDriverWait, Keys)
         elif scroll_to_bottom == True:
-            print("not nice")
             self.__scroll_to_bottom()
-        else:
-            print("what??")
 
         # scroll_to_bottom() if isinstance(scroll_to_bottom, Function) else self.__scroll_to_bottom()
         return self.convert_to_scraper(self.driver.page_source)

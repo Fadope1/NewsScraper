@@ -33,7 +33,7 @@ class YahooFinance(Website):
         with SeleniumScraper(search_url) as scraper:
             soup = scraper.load(scroll_to_bottom=YahooFinance.__scroll_to_bottom)
 
-        list_objects = self.recursive_find_all(
+        list_objects = self.list_find_all(
                             soup,
                             {
                                'ul': {'class', 'My(0) P(0) Wow(bw) Ov(h)'},
