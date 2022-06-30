@@ -6,13 +6,13 @@ Utils for scraping with selenium or simple requests.get()
 from Exceptions import CannotAcceptCookies
 
 ## in-build imports ##
-from typing import Optional, Union
+from typing import Callable
 from datetime import date
 from abc import ABC, abstractmethod
 import requests
 
 ## other imports ##
-from attr import define
+from attr import define, ib, validators
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
@@ -21,16 +21,14 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from webdriver_manager.microsoft  import EdgeChromiumDriverManager
 
-Function = type(lambda:_)
-
 
 @define(frozen=True)
 class Article:
     """This defines how a article should be structured."""
-    headline: str
-    body: str
-    author: Optional[str]
-    date: Optional[str | date]
+    headline: ib(validator=validators.instance_of(str))
+    body: ib(validator=validators.instance_of(str))
+    author: ib(validator=validators.optional(validators.instance_of(str)))
+    date: ib(validator=validators.optional(validators.instance_of(str | date)))
 
 
 class Website(ABC):
@@ -69,6 +67,10 @@ class Website(ABC):
         return self.__recursive_find_all(soup, search, search_keys)
 
     @abstractmethod
+    def __eq__(self, url: str) -> bool:
+        """Check if a url is scrapable by the scraper"""
+
+    @abstractmethod
     def scrape_article(self, article_url: str) -> Article:
         """Scrape the url to find Article infos."""
 
@@ -102,7 +104,7 @@ class SeleniumScraper(_NewsScraper):
         super().__init__(*args, **kwargs)
 
         options = webdriver.EdgeOptions()
-        # options.add_argument('--headless')
+        options.add_argument('--headless')
         self.driver = webdriver.Edge(EdgeChromiumDriverManager().install(), options=options)
 
     def __enter__(self):
@@ -112,18 +114,17 @@ class SeleniumScraper(_NewsScraper):
         # TODO: handle known exception...
         pass
 
-    def load(self, scroll_to_bottom: Function | bool = True, accept_cookies=True) -> BeautifulSoup:
+    def load(self, scroll_to_bottom: Callable | bool = True, accept_cookies=True) -> BeautifulSoup:
         """This initalizes the page and loads the data."""
         self.driver.get(self.url)
         self.__accept_cookies() if accept_cookies else None
-        # self.__scroll_to_bottom() if scroll_to_bottom else None
-        print("Decision point", scroll_to_bottom, type(scroll_to_bottom))
-        if isinstance(scroll_to_bottom, Function):
+
+        if isinstance(scroll_to_bottom, Callable):
             scroll_to_bottom(self.driver, WebDriverWait, Keys)
-        elif scroll_to_bottom == True:
+        elif scroll_to_bottom:
             self.__scroll_to_bottom()
 
-        # scroll_to_bottom() if isinstance(scroll_to_bottom, Function) else self.__scroll_to_bottom()
+        # scroll_to_bottom() if isinstance(scroll_to_bottom, Callable) else self.__scroll_to_bottom()
         return self.convert_to_scraper(self.driver.page_source)
 
     def __scroll_to_bottom(self) -> None:

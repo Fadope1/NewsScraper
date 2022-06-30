@@ -31,7 +31,7 @@ class YahooFinance(Website):
 
         search_url: str = self.base_url + f"/quote/{stock}/news?p={stock}"
         with SeleniumScraper(search_url) as scraper:
-            soup = scraper.load(scroll_to_bottom=YahooFinance.__scroll_to_bottom)
+            soup = scraper.load(scroll_to_bottom=self.__scroll_to_bottom)
 
         list_objects = self.list_find_all(
                             soup,

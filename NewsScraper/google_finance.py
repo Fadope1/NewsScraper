@@ -14,11 +14,11 @@ class GoogleFinance(Website):
         pass
 
     def scrape_urls(self, stock: str) -> list[str]:
-        # https://www.google.com/finance/quote/MSFT:NASDAQ
-        # TODO: Search function for finding stock url
-        url = "https://www.google.com/finance/quote/MSFT:NASDAQ"
+        """Scrape all news urls from google finance."""
+        # TODO: Search function for finding stock exchange
+        search_url = f"https://www.google.com/finance/quote/{stock.upper()}:NASDAQ"
 
-        with RequestScraper(url) as scraper:
+        with RequestScraper(search_url) as scraper:
             soup = scraper.load(verify=False)
 
         found = soup.find('div', attrs={'class': 'b4EnYd'})
@@ -30,23 +30,17 @@ class GoogleFinance(Website):
         for news in news_objects:
             news_list.append(news.find('div').find('div').find('a'))
 
-
         urls: set = {""}
         news_urls: list = []
         for news in news_list:
             url = news.get('href')
-            if not url:
+            title = news.find('div')
+            if not url or if not title or url in urls:
                 continue
             if not url.startswith("https"):
                 continue
 
-            title = news.find('div')
-            if not title:
-                continue
             title = title.find('div', attrs={'class': 'Yfwt5'})
-
-            if url in urls:
-                continue
 
             urls.add(url) # duplicate checking
             news_urls.append([url, title.text])
@@ -54,6 +48,7 @@ class GoogleFinance(Website):
         return news_urls
 
     def scrape_article(self, url) -> Article:
+        # TODO: Check if article is from google else throw exception "Can't Scrape non google Articles"
         pass
 
 
