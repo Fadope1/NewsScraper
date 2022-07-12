@@ -1,5 +1,6 @@
 """
-Utils for scraping with selenium or simple requests.get()
+Utils for scraping with selenium or simple get requests.
+Defines what a website and a article is.
 """
 
 ## Local imports ##
@@ -7,12 +8,12 @@ from Exceptions import CannotAcceptCookies
 
 ## in-build imports ##
 from typing import Callable
-from datetime import date
+import datetime
 from abc import ABC, abstractmethod
 import requests
 
-## other imports ##
-from attr import define, ib, validators
+## global imports ##
+from attr import define, validators
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
@@ -25,10 +26,13 @@ from webdriver_manager.microsoft  import EdgeChromiumDriverManager
 @define(frozen=True)
 class Article:
     """This defines how a article should be structured."""
-    headline: ib(validator=validators.instance_of(str))
-    body: ib(validator=validators.instance_of(str))
-    author: ib(validator=validators.optional(validators.instance_of(str)))
-    date: ib(validator=validators.optional(validators.instance_of(str | date)))
+    ## Required ##
+    headline: str # main headline
+    body: str # article body
+    ## Optional ##
+    sub_headline: str | None = None # sub headline
+    author: list[str] | None = None # who wrote the article
+    date: datetime.date | datetime.datetime | None = None # when the article was published
 
 
 class Website(ABC):
@@ -46,10 +50,10 @@ class Website(ABC):
         "consent"
     }
 
-    def __init__(self, url: str):
+    def __init__(self, url: str) -> None:
         self.base_url = url
 
-    def __recursive_find_all(self, soup, search, search_keys, n=0):
+    def __recursive_find_all(self, soup: BeautifulSoup, search: dict, search_keys: list[str], n: int = 0) -> list[str]:
         id = search_keys[n]
         if len(search)-1 == n: # if last layer
             return soup.find_all(id, attrs=search[id]) # list[str]
@@ -71,12 +75,12 @@ class Website(ABC):
         """Check if a url is scrapable by the scraper"""
 
     @abstractmethod
-    def scrape_article(self, article_url: str) -> Article:
-        """Scrape the url to find Article infos."""
+    def get_article(self, article_url: str) -> Article:
+        """Scrape/Request the url to find Article infos."""
 
     @abstractmethod
-    def scrape_urls(self, stock: str) -> list[str]:
-        """Scrape the url to find all sub news urls."""
+    def get_urls(self, stock: str) -> list[str]:
+        """Scrape/Request the url to find all sub news urls."""
 
 
 class _NewsScraper(ABC):
@@ -86,11 +90,14 @@ class _NewsScraper(ABC):
 
     def get_encoding(self, text: str) -> str:
         """Get encoding of a string."""
+        # get html charset encoding first?
+        # chardet package
+        # from bs4 import UnicodeDammit
         return "utf-8" # TODO
 
     def convert_to_scraper(self, content: str) -> BeautifulSoup:
         """Convert the website to a soup object."""
-        return BeautifulSoup(content, 'html.parser')
+        return BeautifulSoup(content, 'html.parser') # TODO: change to lxml
 
     @abstractmethod
     def load(self, *args, **kwargs) -> BeautifulSoup:
