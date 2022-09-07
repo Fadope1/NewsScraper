@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 from utils import SeleniumScraper, RequestScraper, Article, Website
 
 import requests
+import datetime
 
 
 class YahooFinance(Website):
@@ -71,16 +72,20 @@ class YahooFinance(Website):
         return article
 
 
-# TODO: get_article => headline, author, date
+# Spiegel and manager-magazin
 class Spiegel(Website):
     """Spiegel.de news api scraper."""
     URL: str = "https://www.spiegel.de/"
+    URLS: list[str] = [URL, "https://www.manager-magazin.de/"]
 
     def __init__(self) -> None:
         super().__init__(self.URL)
 
     def __eq__(self, url: str) -> bool:
-        return self.URL in url
+        for u in self.URLS:
+            if u in url:
+                return True
+        return False
 
     def ctr_api_url(self, stock: str, length: int | str = 30) -> str:
         """Construct the url for searching in spiegel.de"""
@@ -102,24 +107,30 @@ class Spiegel(Website):
 
     def get_article(self, url: str) -> Article:
         with RequestScraper(url) as scraper:
-            soup: BeautifulSoup = scraper.load()
+            soup: BeautifulSoup = scraper.load(verify=False)
 
         raw_body: list[BeautifulSoup] = self.list_find_all(soup, {'div': {'data-sara-click-el': 'body_element'}, 'p': {}})
         body: str = ""
+        # add all paragraphs together to form the body of the article
         for paragraph in raw_body:
             body += paragraph.text
 
+        header = list(soup.find("h2"))
+        subheadline = header[1].text
+        headline = header[3].text
+        intro = soup.find("div", {"class": "RichText"}).text
+
+        time: datetime = datetime.datetime.strptime(soup.find("time")["datetime"], r"%Y-%m-%d %H:%M:%S") # 2022-07-13 12:13:04
+
         article: Article = Article(
-            headline="Empty",
-            body=body
+            headline=headline,
+            subheadline=subheadline,
+            intro=intro,
+            body=body,
+            date=time
         )
 
         return article
-
-
-# TODO
-class ManagerMagazin(Website):
-    ...
 
 
 class GoogleFinance(Website):
@@ -130,7 +141,7 @@ class GoogleFinance(Website):
         super().__init__(self.URL)
 
     def __eq__(self, url: str) -> bool:
-        raise False # because google has no articles it cannot be scraped -> always False
+        return False # because google has no articles it cannot be scraped -> always False
 
     def get_urls(self, stock: str) -> list[str]:
         """Scrape all news urls from google finance."""
@@ -168,6 +179,23 @@ class GoogleFinance(Website):
         NotImplementedError("Cannot scrape Google articles.")
 
 
+class Investing(Website):
+    URL: str = "https://www.investing.com/news/"
+    API_URL: str = "https://www.investing.com/search/service/SearchInnerPage"
+    """ data:
+    search_text: basf
+    tab: news
+    isFilter: true
+    """
+
+    def ctr_api_url(self, stock: str) -> str:
+        return f"https://www.investing.com/search/?q={stock}"
+
+    def get_urls(self, stock: str) -> list[str]:
+        return super().get_urls(stock)
+
+
+# defines what websites can be scraped
 ARTICLE_SCRAPER: set[Website] = {YahooFinance, Spiegel}
 
 def get_articles(urls: list[str], scraper: set[Website] = ARTICLE_SCRAPER) -> set[Article]:
@@ -180,7 +208,7 @@ def get_articles(urls: list[str], scraper: set[Website] = ARTICLE_SCRAPER) -> se
             s = article_scraper()
             if s == url:
                 articles.add(s.get_article(url)) # add check if article was scraped succesfull?
-                break # go to next url if article was scraped
+                break # go to next url if article was scraped succesfully
     
     return articles
 
@@ -191,6 +219,9 @@ if __name__ == "__main__":
     # urls.update(GoogleFinance().get_urls(stock))
 
     scraper = Spiegel()
-    urls = scraper.get_urls(stock)
+    # urls = scraper.get_urls(stock)
+    urls: list[str] = ["https://www.manager-magazin.de/finanzen/boerse/dax-schwaecher-euro-faellt-auf-20-jahres-tief-a-1589d088-ca07-495d-9e72-859c2606eda3"]
     articles: set[Article] = get_articles(urls)
+
+    print(articles)
     

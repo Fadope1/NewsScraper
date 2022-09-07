@@ -47,7 +47,6 @@ class Scraper:
         #     scraper = self.ARTICLE_DICT.get(url, self)
         #     articles.extend(scraper.scrape_article(url))
 
-        x >= 2
         return articles
 
 

@@ -30,7 +30,8 @@ class Article:
     headline: str # main headline
     body: str # article body
     ## Optional ##
-    sub_headline: str | None = None # sub headline
+    subheadline: str | None = None # sub headline or theme/ category
+    intro: str | None = None # intro directly under title
     author: list[str] | None = None # who wrote the article
     date: datetime.date | datetime.datetime | None = None # when the article was published
 
