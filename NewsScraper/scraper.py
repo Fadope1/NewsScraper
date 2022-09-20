@@ -198,7 +198,7 @@ class Investing(Website):
 # defines what websites can be scraped
 ARTICLE_SCRAPER: set[Website] = {YahooFinance, Spiegel}
 
-def get_articles(urls: list[str], scraper: set[Website] = ARTICLE_SCRAPER) -> set[Article]:
+def get_articles_by_urls(urls: list[str], scraper: set[Website] = ARTICLE_SCRAPER) -> set[Article]:
     """Find scraper for url and scrape the content article."""
     articles: set[Article] = set()
 
@@ -213,6 +213,17 @@ def get_articles(urls: list[str], scraper: set[Website] = ARTICLE_SCRAPER) -> se
     return articles
 
 
+def get_articles(query: str, scraper: set[Website] = ARTICLE_SCRAPER) -> set[Article]:
+    """Get all Articles from all available scrapers about the search query."""
+    urls: set[Article] = set()
+
+    for website in scraper:
+        urls.add(website.get_urls(query))
+
+    return get_articles_by_urls(urls, scraper=scraper)
+
+
+
 if __name__ == "__main__":
     stock = "BASF"
     # urls: set[str] = YahooFinance().get_urls(stock)
@@ -221,7 +232,6 @@ if __name__ == "__main__":
     scraper = Spiegel()
     # urls = scraper.get_urls(stock)
     urls: list[str] = ["https://www.manager-magazin.de/finanzen/boerse/dax-schwaecher-euro-faellt-auf-20-jahres-tief-a-1589d088-ca07-495d-9e72-859c2606eda3"]
-    articles: set[Article] = get_articles(urls)
+    # articles: set[Article] = get_articles()
 
-    print(articles)
     

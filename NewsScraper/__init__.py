@@ -1,0 +1,1 @@
+from NewsScraper.scraper import get_articles, get_articles_by_urls
